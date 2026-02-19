@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="theme-color" content="#1E0433"/>
+  <meta name="description" content="Tirez chaque jour une vertu chrétienne à vivre concrètement. Influencons Autrement."/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="Vertu du Jour"/>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="apple-touch-icon" href="icons/icon-192.png"/>
+  <title>Ma Vertu du Jour — Influencons.com</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Cinzel:wght@400;600&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --violet-deep:  #1E0433;
+      --violet-mid:   #4A1070;
+      --violet-light: #7B2D8B;
+      --gold:         #E8C84A;
+      --gold-light:   #F5E27A;
+      --gold-dark:    #C9A227;
+      --white:        #FFFFFF;
+      --white-soft:   #F0EBF8;
+      --white-dim:    rgba(255,255,255,0.75);
+      --white-faint:  rgba(255,255,255,0.28);
+      --white-ghost:  rgba(255,255,255,0.10);
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      min-height:100vh;
+      background: linear-gradient(160deg, #1E0433 0%, #2D0650 50%, #1A0330 100%);
+      font-family:'Cormorant Garamond', Georgia, serif;
+      color: var(--white);
+      overflow-x: hidden;
+    }
+
+    /* Stars */
+    .stars { position:fixed; inset:0; pointer-events:none; z-index:0; }
+    .star {
+      position:absolute; border-radius:50%;
+      background:white;
+      animation: twinkle var(--d,3s) ease-in-out infinite var(--delay,0s);
+      opacity:0;
+    }
+    @keyframes twinkle {
+      0%,100%{opacity:0;transform:scale(.8);}
+      50%{opacity:var(--op,.5);transform:scale(1);}
+    }
+    .orb {
+      position:fixed; top:-150px; left:50%; transform:translateX(-50%);
+      width:700px; height:700px; border-radius:50%;
+      background: radial-gradient(circle, rgba(123,45,139,0.4) 0%, transparent 65%);
+      pointer-events:none; z-index:0;
+    }
+
+    /* Layout */
+    .page {
+      position:relative; z-index:1; min-height:100vh;
+      display:flex; flex-direction:column; align-items:center;
+      padding:32px 20px 60px;
+    }
+
+    /* Notification bell */
+    .notif-btn {
+      position:fixed; top:18px; right:18px; z-index:100;
+      width:44px; height:44px; border-radius:50%;
+      background: rgba(255,255,255,0.08);
+      border:1px solid rgba(255,255,255,0.18);
+      display:flex; align-items:center; justify-content:center;
+      cursor:pointer; transition:all .25s; backdrop-filter:blur(8px);
+    }
+    .notif-btn:hover { background:rgba(255,255,255,0.15); border-color:var(--gold); }
+    .notif-btn svg { width:20px; height:20px; }
+    .notif-btn .dot {
+      position:absolute; top:9px; right:9px;
+      width:8px; height:8px; border-radius:50%;
+      background:var(--gold); border:1.5px solid var(--violet-deep);
+      display:none;
+    }
+    .notif-btn.active .dot { display:block; }
+    .notif-btn.active svg path { stroke:var(--gold); }
+
+    /* Notif modal */
+    .modal-overlay {
+      position:fixed; inset:0; background:rgba(10,0,20,0.75);
+      z-index:200; display:none; align-items:center; justify-content:center;
+      backdrop-filter:blur(4px);
+    }
+    .modal-overlay.open { display:flex; }
+    .modal {
+      background:linear-gradient(145deg,rgba(74,16,112,0.95),rgba(30,4,51,0.98));
+      border:1px solid rgba(232,200,74,0.25);
+      border-radius:20px; padding:36px 32px; max-width:360px; width:90%;
+      text-align:center; box-shadow:0 30px 80px rgba(0,0,0,0.6);
+    }
+    .modal h3 {
+      font-family:'Cinzel',serif; font-size:.9rem; letter-spacing:3px;
+      color:var(--gold); margin-bottom:8px;
+    }
+    .modal p {
+      font-size:.95rem; color:var(--white-dim); line-height:1.6; margin-bottom:24px;
+    }
+    .time-pick {
+      display:flex; align-items:center; justify-content:center; gap:10px;
+      margin-bottom:24px;
+    }
+    .time-pick label {
+      font-family:'Cinzel',serif; font-size:.65rem; letter-spacing:2px;
+      color:var(--white-dim); display:block; margin-bottom:6px;
+    }
+    .time-pick select {
+      background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2);
+      color:var(--white); font-family:'Cinzel',serif; font-size:.9rem;
+      padding:8px 14px; border-radius:10px; cursor:pointer; outline:none;
+    }
+    .time-sep { color:var(--gold); font-size:1.4rem; margin-top:16px; }
+    .modal-actions { display:flex; gap:10px; justify-content:center; }
+    .btn-modal-confirm {
+      padding:11px 28px; border-radius:50px;
+      background:linear-gradient(135deg,var(--gold-dark),var(--gold),var(--gold-light));
+      color:var(--violet-deep); font-family:'Cinzel',serif;
+      font-size:.75rem; font-weight:600; letter-spacing:2px;
+      border:none; cursor:pointer; transition:transform .2s;
+    }
+    .btn-modal-confirm:hover { transform:translateY(-1px); }
+    .btn-modal-cancel {
+      padding:11px 22px; border-radius:50px; background:transparent;
+      border:1px solid rgba(255,255,255,0.15); color:var(--white-dim);
+      font-family:'Cinzel',serif; font-size:.72rem; letter-spacing:2px;
+      cursor:pointer; transition:all .2s;
+    }
+    .btn-modal-cancel:hover { border-color:rgba(255,255,255,.35); color:var(--white); }
+    .notif-status {
+      font-size:.78rem; color:var(--gold); letter-spacing:1px;
+      margin-top:14px; min-height:20px; font-style:italic;
+    }
+
+    /* Header */
+    header { text-align:center; margin-bottom:28px; animation:fadeDown .9s ease both; }
+    @keyframes fadeDown {
+      from{opacity:0;transform:translateY(-20px);}
+      to{opacity:1;transform:translateY(0);}
+    }
+    .logo-circle {
+      width:86px; height:86px; margin:0 auto 14px; border-radius:50%;
+      background:radial-gradient(circle at 38% 38%,var(--violet-light),var(--violet-deep));
+      border:1.5px solid rgba(232,200,74,0.55);
+      display:flex; align-items:center; justify-content:center;
+      box-shadow:0 0 35px rgba(232,200,74,0.15),inset 0 0 20px rgba(0,0,0,0.3);
+    }
+    .logo-circle svg { width:44px; height:44px; }
+    .site-name {
+      font-family:'Cinzel',serif; font-size:1.05rem; font-weight:600;
+      letter-spacing:4px; color:var(--white);
+    }
+    .site-name span { color:var(--gold); font-weight:400; }
+    .tagline {
+      font-size:.83rem; letter-spacing:2.5px; color:var(--white-dim);
+      margin-top:5px; font-style:italic;
+    }
+    .divider {
+      display:flex; align-items:center; gap:10px;
+      margin:10px auto 0; width:210px;
+    }
+    .divider-line { flex:1; height:1px; background:linear-gradient(to right,transparent,rgba(232,200,74,.5)); }
+    .divider-line.r { background:linear-gradient(to left,transparent,rgba(232,200,74,.5)); }
+    .divider-diamond { width:6px; height:6px; background:var(--gold); transform:rotate(45deg); flex-shrink:0; }
+
+    .date-badge {
+      font-family:'Cinzel',serif; font-size:.68rem; letter-spacing:3px;
+      color:var(--white-dim); text-transform:uppercase; margin-bottom:28px;
+      animation:fadeDown .9s .15s ease both;
+    }
+
+    /* Card */
+    .card {
+      width:100%; max-width:520px;
+      background:linear-gradient(150deg,rgba(80,20,120,0.45),rgba(20,4,45,0.7));
+      border:1px solid rgba(255,255,255,0.14);
+      border-radius:24px; padding:42px 38px 38px; text-align:center;
+      box-shadow:0 28px 90px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.1);
+      backdrop-filter:blur(10px);
+      animation:fadeUp .9s .25s ease both; position:relative; overflow:hidden;
+    }
+    @keyframes fadeUp {
+      from{opacity:0;transform:translateY(28px);}
+      to{opacity:1;transform:translateY(0);}
+    }
+    .card::before,.card::after {
+      content:''; position:absolute; width:54px; height:54px;
+      border-color:rgba(255,255,255,0.15); border-style:solid;
+    }
+    .card::before { top:14px;left:14px;border-width:1px 0 0 1px;border-radius:6px 0 0 0; }
+    .card::after  { bottom:14px;right:14px;border-width:0 1px 1px 0;border-radius:0 0 6px 0; }
+
+    /* Idle */
+    .idle-section { display:flex; flex-direction:column; align-items:center; gap:22px; }
+    .idle-icon {
+      width:80px; height:80px; border-radius:50%;
+      background:radial-gradient(circle,rgba(232,200,74,0.1),transparent 70%);
+      border:1px solid rgba(255,255,255,0.15);
+      display:flex; align-items:center; justify-content:center;
+    }
+    .idle-icon svg { width:36px; height:36px; }
+    .idle-text {
+      font-size:1.1rem; font-weight:300; color:var(--white-dim);
+      line-height:1.75; font-style:italic; max-width:300px;
+    }
+
+    /* Result */
+    .result-section { display:none; flex-direction:column; align-items:center; gap:20px; }
+    .result-section.visible { display:flex; }
+    .vertu-label {
+      font-family:'Cinzel',serif; font-size:.63rem;
+      letter-spacing:4px; color:var(--white-dim); opacity:.8;
+    }
+    .vertu-name {
+      font-family:'Cinzel',serif; font-size:2.2rem; font-weight:600;
+      color:var(--white); line-height:1.15;
+      text-shadow:0 0 50px rgba(232,200,74,0.25);
+      animation:glowIn .55s ease both;
+    }
+    @keyframes glowIn {
+      from{opacity:0;transform:scale(.93);}
+      to{opacity:1;transform:scale(1);}
+    }
+    .vertu-def {
+      font-size:1.03rem; color:var(--white-dim);
+      font-style:italic; line-height:1.72; max-width:360px;
+    }
+    .verset-box {
+      background:rgba(255,255,255,0.06);
+      border-left:2px solid rgba(232,200,74,0.5);
+      border-radius:0 12px 12px 0;
+      padding:15px 20px; text-align:left; width:100%;
+    }
+    .verset-text {
+      font-size:.98rem; color:var(--white);
+      font-style:italic; line-height:1.65; margin-bottom:7px;
+    }
+    .verset-ref {
+      font-family:'Cinzel',serif; font-size:.62rem;
+      color:var(--gold); letter-spacing:2px; opacity:.85;
+    }
+    .defi-box {
+      background:rgba(255,255,255,0.06);
+      border:1px solid rgba(255,255,255,0.1);
+      border-radius:14px; padding:16px 20px; width:100%; text-align:left;
+    }
+    .defi-label {
+      font-family:'Cinzel',serif; font-size:.6rem;
+      letter-spacing:3px; color:var(--gold-light); opacity:.8;
+      margin-bottom:8px; display:flex; align-items:center; gap:8px;
+    }
+    .defi-label::after { content:''; flex:1; height:1px; background:rgba(255,255,255,0.1); }
+    .defi-text { font-size:.97rem; color:var(--white); line-height:1.62; }
+
+    /* Buttons */
+    .btn-draw {
+      margin-top:4px; padding:16px 44px; border-radius:50px;
+      background:linear-gradient(135deg,var(--gold-dark),var(--gold),var(--gold-light));
+      color:var(--violet-deep); font-family:'Cinzel',serif;
+      font-size:.88rem; font-weight:600; letter-spacing:3px;
+      border:none; cursor:pointer;
+      box-shadow:0 8px 30px rgba(232,200,74,0.22),0 2px 8px rgba(0,0,0,0.3);
+      transition:transform .2s,box-shadow .2s; position:relative; overflow:hidden;
+    }
+    .btn-draw::after {
+      content:''; position:absolute; inset:0;
+      background:linear-gradient(135deg,rgba(255,255,255,0.22),transparent);
+      border-radius:inherit;
+    }
+    .btn-draw:hover { transform:translateY(-2px); box-shadow:0 14px 40px rgba(232,200,74,0.3); }
+    .btn-draw:active { transform:translateY(0); }
+
+    .btn-redraw {
+      background:transparent; border:1px solid rgba(255,255,255,0.2);
+      color:var(--white-dim); font-family:'Cinzel',serif; font-size:.72rem;
+      letter-spacing:2.5px; padding:10px 28px; border-radius:50px;
+      cursor:pointer; transition:all .2s; margin-top:2px;
+    }
+    .btn-redraw:hover { background:rgba(255,255,255,0.08); color:var(--white); border-color:rgba(255,255,255,.4); }
+
+    .share-row { display:flex; gap:9px; justify-content:center; flex-wrap:wrap; }
+    .btn-share {
+      display:flex; align-items:center; gap:7px;
+      padding:9px 17px; border-radius:50px;
+      border:1px solid rgba(255,255,255,0.14);
+      background:rgba(255,255,255,0.06);
+      color:var(--white-dim); font-size:.78rem;
+      font-family:'Cormorant Garamond',serif; letter-spacing:1px;
+      cursor:pointer; transition:all .2s;
+    }
+    .btn-share:hover { background:rgba(255,255,255,0.12); color:var(--white); border-color:rgba(255,255,255,.28); }
+    .btn-share svg { width:14px; height:14px; }
+
+    /* Spinner */
+    .spinner {
+      width:34px; height:34px;
+      border:2px solid rgba(255,255,255,0.12);
+      border-top-color:var(--gold); border-radius:50%;
+      animation:spin .75s linear infinite; display:none; margin:10px auto;
+    }
+    .spinner.visible { display:block; }
+    @keyframes spin { to{transform:rotate(360deg);} }
+
+    /* Progress bar */
+    .progress-bar-wrap {
+      width:100%; max-width:520px; margin-top:20px;
+      animation:fadeUp .9s .4s ease both;
+    }
+    .progress-label {
+      display:flex; justify-content:space-between;
+      font-family:'Cinzel',serif; font-size:.6rem; letter-spacing:2px;
+      color:var(--white-dim); opacity:.6; margin-bottom:7px;
+    }
+    .progress-track {
+      height:3px; background:rgba(255,255,255,0.08);
+      border-radius:10px; overflow:hidden;
+    }
+    .progress-fill {
+      height:100%; background:linear-gradient(to right,var(--gold-dark),var(--gold-light));
+      border-radius:10px; transition:width .6s ease;
+    }
+    .progress-message {
+      margin-top:10px;
+      text-align:center;
+      font-family:'Cormorant Garamond', serif;
+      font-size:.95rem;
+      font-style:italic;
+      color:var(--white-dim);
+      min-height:22px;
+      animation: fadeIn .6s ease;
+    }
+    @keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
+
+    /* History */
+    .history-section {
+      width:100%; max-width:520px; margin-top:22px;
+      animation:fadeUp .9s .5s ease both;
+    }
+    .history-title {
+      font-family:'Cinzel',serif; font-size:.62rem;
+      letter-spacing:3.5px; color:var(--white-dim); opacity:.45;
+      text-align:center; margin-bottom:11px;
+    }
+    .history-list { display:flex; flex-direction:column; gap:7px; }
+    .history-item {
+      display:flex; align-items:center; gap:13px;
+      background:rgba(255,255,255,0.05);
+      border:1px solid rgba(255,255,255,0.08);
+      border-radius:12px; padding:11px 17px;
+    }
+    .history-date {
+      font-family:'Cinzel',serif; font-size:.58rem;
+      color:var(--gold); opacity:.65; letter-spacing:1px; white-space:nowrap;
+    }
+    .history-dot { width:4px; height:4px; border-radius:50%; background:var(--white); opacity:.2; flex-shrink:0; }
+    .history-name { font-size:.93rem; color:var(--white-dim); font-weight:600; }
+
+    /* Footer */
+    footer {
+      margin-top:44px; text-align:center;
+      font-size:.72rem; color:rgba(255,255,255,0.2); letter-spacing:1.5px;
+      animation:fadeUp .9s .6s ease both;
+    }
+    footer a { color:var(--gold); opacity:.45; text-decoration:none; }
+
+    @media(max-width:560px){
+      .card{padding:32px 20px 28px;}
+      .vertu-name{font-size:1.8rem;}
+    }
+
+    /* Toast */
+    .toast {
+      position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(80px);
+      background:rgba(74,16,112,0.95); border:1px solid rgba(232,200,74,0.3);
+      color:var(--white); font-family:'Cinzel',serif; font-size:.72rem;
+      letter-spacing:1.5px; padding:12px 24px; border-radius:50px;
+      backdrop-filter:blur(8px); z-index:300;
+      transition:transform .35s ease, opacity .35s ease; opacity:0;
+    }
+    .toast.show { transform:translateX(-50%) translateY(0); opacity:1; }
+  </style>
+</head>
+<body>
+
+<div class="stars" id="stars"></div>
+<div class="orb"></div>
+
+<!-- Notification bell -->
+<button class="notif-btn" id="notifBtn" onclick="openNotifModal()" title="Rappel quotidien">
+  <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+    <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+  </svg>
+  <span class="dot"></span>
+</button>
+
+<!-- Notification modal -->
+<div class="modal-overlay" id="notifModal">
+  <div class="modal">
+    <h3>🔔 RAPPEL QUOTIDIEN</h3>
+    <p>Recevez chaque jour une notification pour tirer votre vertu et rester dans l'esprit du Carême.</p>
+    <div class="time-pick">
+      <div>
+        <label>Heure</label>
+        <select id="notifHour">
+          <option value="6">06</option><option value="7">07</option>
+          <option value="8" selected>08</option><option value="9">09</option>
+          <option value="10">10</option><option value="12">12</option>
+          <option value="18">18</option><option value="20">20</option>
+          <option value="21">21</option>
+        </select>
+      </div>
+      <span class="time-sep">:</span>
+      <div>
+        <label>Minute</label>
+        <select id="notifMinute">
+          <option value="0" selected>00</option>
+          <option value="15">15</option>
+          <option value="30">30</option>
+          <option value="45">45</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeNotifModal()">Annuler</button>
+      <button class="btn-modal-confirm" onclick="activerNotifications()">✦ Activer</button>
+    </div>
+    <div class="notif-status" id="notifStatus"></div>
+  </div>
+</div>
+
+<div class="page">
+
+  <header>
+    <div class="logo-circle">
+      <svg viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="fg" x1="128" y1="24" x2="128" y2="200" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#F9EFA0"/>
+            <stop offset="55%" stop-color="#E8C84A"/>
+            <stop offset="100%" stop-color="#C9A227"/>
+          </linearGradient>
+        </defs>
+        <path d="M128,24C108,24 72,52 72,102C72,120 80,136 90,148C86,136 88,120 98,112C94,126 100,142 114,152C108,138 114,120 128,110C122,126 128,144 142,154C152,162 158,176 152,194C166,184 174,164 168,142C176,156 176,174 166,192C180,178 188,156 182,130C186,144 186,162 176,178C190,160 194,138 186,112C178,88 160,68 140,54C148,76 144,102 128,118C132,96 124,72 108,56C116,74 116,96 102,114C94,92 100,58 128,24Z" fill="url(#fg)"/>
+        <path d="M128,76C118,88 114,104 120,118C124,106 132,98 140,96C136,108 136,124 126,134C118,122 114,106 120,96C112,106 108,120 114,134C118,146 126,154 128,158C130,154 138,146 142,134C148,120 144,106 136,96C140,108 140,124 130,134C126,120 126,102 128,76Z" fill="rgba(255,255,255,0.28)"/>
+      </svg>
+    </div>
+    <div class="site-name">INFLUENCONS<span>.COM</span></div>
+    <div class="tagline">Influencons Autrement</div>
+    <div class="divider">
+      <div class="divider-line"></div>
+      <div class="divider-diamond"></div>
+      <div class="divider-line r"></div>
+    </div>
+  </header>
+
+  <div class="date-badge" id="dateBadge"></div>
+
+  <div class="card">
+    <div class="idle-section" id="idleSection">
+      <div class="idle-icon">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M12 2L9.5 8.5H3L8.3 12.5L6.2 19L12 15.3L17.8 19L15.7 12.5L21 8.5H14.5L12 2Z"
+            stroke="white" stroke-width="1.2" stroke-linejoin="round" fill="rgba(255,255,255,0.07)"/>
+        </svg>
+      </div>
+      <p class="idle-text">« Chaque jour est une nouvelle occasion d'être lumière dans le monde. »</p>
+      <button class="btn-draw" onclick="tirerVertu()">✦ &nbsp;TIRER MA VERTU &nbsp;✦</button>
+    </div>
+
+    <div class="spinner" id="spinner"></div>
+
+    <div class="result-section" id="resultSection">
+      <div class="vertu-label">✦ &nbsp;VOTRE VERTU DU JOUR &nbsp;✦</div>
+      <div class="vertu-name" id="vertuName"></div>
+      <p class="vertu-def" id="vertuDef"></p>
+      <div class="verset-box">
+        <p class="verset-text" id="versetText"></p>
+        <p class="verset-ref" id="versetRef"></p>
+      </div>
+      <div class="defi-box">
+        <div class="defi-label">DÉFI DU JOUR</div>
+        <p class="defi-text" id="defiText"></p>
+      </div>
+      <div class="share-row">
+        <button class="btn-share" onclick="partager('facebook')">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg>
+          Facebook
+        </button>
+        <button class="btn-share" onclick="partager('whatsapp')">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+          WhatsApp
+        </button>
+        <button class="btn-share" id="btnCopier" onclick="copier()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+          Copier
+        </button>
+      </div>
+      <button class="btn-redraw" onclick="nouvelleVertu()">↻ &nbsp;Nouvelle vertu</button>
+    </div>
+  </div>
+
+  <!-- Progress Carême -->
+  <div class="progress-bar-wrap" id="progressWrap">
+    <div class="progress-label">
+      <span>CARÊME — JOUR <span id="jourNum">?</span> / 40</span>
+      <span id="jourRestant">? jours restants</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progressFill" style="width:0%"></div>
+    </div>
+    <div class="progress-message" id="progressMessage"></div>
+  </div>
+
+  <div class="history-section" id="historySection" style="display:none">
+    <div class="history-title">— VERTUS PRÉCÉDENTES —</div>
+    <div class="history-list" id="historyList"></div>
+  </div>
+
+  <footer>
+    <p>© 2025 <a href="https://influencons.com">influencons.com</a> &nbsp;·&nbsp; Ma Vertu du Jour &nbsp;·&nbsp; Carême</p>
+  </footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── 40 VERTUS ──
+const VERTUS = [
+  { nom:"La Patience", def:"Accueillir les délais et les épreuves avec paix, sans se laisser consumer par l'impatience.", verset:"« Soyez patients, mes frères, jusqu'à l'avènement du Seigneur. »", ref:"Jacques 5,7", defi:"Lorsqu'une situation vous contrarie aujourd'hui, prenez 3 respirations profondes avant de répondre. Offrez cette patience à Dieu." },
+  { nom:"La Générosité", def:"Donner librement de son temps, de ses biens et de son cœur sans attendre de retour.", verset:"« Que chacun donne comme il l'a résolu en son cœur, car Dieu aime celui qui donne avec joie. »", ref:"2 Corinthiens 9,7", defi:"Faites un geste concret de générosité aujourd'hui : un sourire, un repas partagé, un service rendu à quelqu'un dans le besoin." },
+  { nom:"Le Pardon", def:"Libérer son cœur de toute rancœur et tendre la main à celui qui nous a blessés.", verset:"« Pardonnez-vous les uns les autres, comme Dieu vous a pardonné en Christ. »", ref:"Éphésiens 4,32", defi:"Pensez à quelqu'un envers qui vous portez une blessure. Priez pour cette personne aujourd'hui, même si c'est difficile." },
+  { nom:"L'Humilité", def:"Reconnaître ses limites avec vérité et placer la gloire non en soi-même, mais en Dieu.", verset:"« Dieu résiste aux orgueilleux, mais il fait grâce aux humbles. »", ref:"Jacques 4,6", defi:"Rendez gloire à Dieu pour un succès récent plutôt que de vous l'attribuer. Dites 'Merci Seigneur' à voix haute." },
+  { nom:"La Gratitude", def:"Reconnaître chaque jour les dons reçus et les accueillir avec un cœur reconnaissant.", verset:"« En toutes choses rendez grâces, car c'est à votre égard la volonté de Dieu en Jésus-Christ. »", ref:"1 Thessaloniciens 5,18", defi:"Écrivez ce soir 5 choses pour lesquelles vous êtes reconnaissant. Rien n'est trop petit pour remercier Dieu." },
+  { nom:"La Miséricorde", def:"Tendre le cœur vers ceux qui souffrent et agir avec compassion sans jugement.", verset:"« Bienheureux les miséricordieux, car ils obtiendront miséricorde. »", ref:"Matthieu 5,7", defi:"Y a-t-il une personne en souffrance dans votre entourage ? Contactez-la aujourd'hui avec un mot doux." },
+  { nom:"La Douceur", def:"Aborder les autres et les situations avec calme, bienveillance et tendresse.", verset:"« Que votre douceur soit connue de tous les hommes. »", ref:"Philippiens 4,5", defi:"Répondez avec douceur là où vous seriez tenté d'être brusque. Observez l'effet sur ceux qui vous entourent." },
+  { nom:"La Foi", def:"S'appuyer sur Dieu avec confiance totale, même lorsque l'on ne voit pas le chemin.", verset:"« La foi, c'est la substance des choses qu'on espère, et la démonstration de celles qu'on ne voit pas. »", ref:"Hébreux 11,1", defi:"Confiez à Dieu une situation qui vous inquiète. Écrivez-la sur un papier, priez dessus, puis déposez-le dans votre Bible." },
+  { nom:"La Charité", def:"Aimer le prochain d'un amour désintéressé, à l'image de l'amour de Dieu pour nous.", verset:"« La charité est patiente, la charité est bonne… elle ne cherche pas son intérêt. »", ref:"1 Corinthiens 13,4-5", defi:"Faites un acte d'amour anonyme aujourd'hui. Laissez un encouragement sans signer, ou aidez quelqu'un discrètement." },
+  { nom:"La Tempérance", def:"Maîtriser ses désirs et ses appétits pour vivre avec équilibre et liberté intérieure.", verset:"« Celui qui se domine vaut mieux que celui qui prend des villes. »", ref:"Proverbes 16,32", defi:"Renoncez aujourd'hui à une chose superflue (excès d'écran, nourriture, distraction) et offrez ce renoncement à Dieu." },
+  { nom:"La Prudence", def:"Discerner avec sagesse le juste chemin avant d'agir, en cherchant la volonté de Dieu.", verset:"« Confie au Seigneur tes œuvres, et tes projets réussiront. »", ref:"Proverbes 16,3", defi:"Avant une décision importante aujourd'hui, prenez 5 minutes en silence pour prier et écouter Dieu." },
+  { nom:"La Justice", def:"Donner à chacun ce qui lui revient et défendre le droit des plus fragiles.", verset:"« Recherchez la justice, corrigez l'oppression, défendez l'orphelin. »", ref:"Isaïe 1,17", defi:"Prenez position pour quelqu'un traité injustement. Un mot d'encouragement peut suffire à changer sa journée." },
+  { nom:"L'Espérance", def:"Garder les yeux fixés sur les promesses de Dieu, même au cœur de l'épreuve.", verset:"« Que le Dieu de l'espérance vous remplisse de toute joie et paix dans la foi. »", ref:"Romains 15,13", defi:"Partagez un mot d'espérance avec quelqu'un qui traverse une période difficile. Soyez la lumière dans sa nuit." },
+  { nom:"La Prière", def:"Entrer en communion intime avec Dieu, lui confier tout et rester à son écoute.", verset:"« Priez sans cesse, rendez grâces en toutes choses. »", ref:"1 Thessaloniciens 5,17-18", defi:"Consacrez 10 minutes supplémentaires à la prière aujourd'hui. Posez votre téléphone et parlez à Dieu à cœur ouvert." },
+  { nom:"Le Service", def:"Se mettre au service des autres avec joie, à l'image du Christ qui est venu pour servir.", verset:"« Que le plus grand parmi vous soit votre serviteur. »", ref:"Matthieu 23,11", defi:"Proposez votre aide spontanément à quelqu'un aujourd'hui — sans attendre qu'on vous le demande." },
+  { nom:"La Persévérance", def:"Tenir ferme dans la foi et l'amour, même lorsque la fatigue ou le découragement s'installent.", verset:"« Courons avec persévérance dans la carrière qui nous est ouverte. »", ref:"Hébreux 12,1", defi:"Reprenez aujourd'hui une bonne habitude abandonnée. Un seul pas suffit pour recommencer." },
+  { nom:"La Simplicité", def:"Vivre avec un cœur droit, sans artifice, en cherchant l'essentiel plutôt que le superflu.", verset:"« Cherchez premièrement le royaume et la justice de Dieu ; et toutes ces choses vous seront données. »", ref:"Matthieu 6,33", defi:"Simplifiez quelque chose aujourd'hui : votre repas, votre planning, votre discours. Retrouvez la beauté de l'essentiel." },
+  { nom:"La Compassion", def:"Ressentir la souffrance de l'autre dans ses propres entrailles et agir pour la soulager.", verset:"« Revêtez-vous donc, comme des élus de Dieu, de compassion, de bonté, d'humilité. »", ref:"Colossiens 3,12", defi:"Regardez autour de vous avec des yeux neufs. Qui autour de vous a besoin d'être vu et reconnu aujourd'hui ?" },
+  { nom:"La Loyauté", def:"Rester fidèle à sa parole, à ses engagements et aux personnes que Dieu a mises sur notre chemin.", verset:"« Que votre parole soit oui, oui, non, non. »", ref:"Matthieu 5,37", defi:"Honorez un engagement que vous avez tardé à tenir. La fidélité dans les petites choses construit la confiance." },
+  { nom:"Le Courage", def:"Avancer malgré la peur, porter la vérité et défendre le bien même quand c'est difficile.", verset:"« Sois fort et courageux. Ne t'effraie point et ne t'épouvante point, car l'Éternel ton Dieu est avec toi. »", ref:"Josué 1,9", defi:"Dites une vérité difficile avec amour à quelqu'un qui en a besoin, ou affrontez une situation que vous repoussez." },
+  { nom:"La Sobriété", def:"Vivre dans la modération et refuser l'excès, pour garder un esprit libre et un cœur disponible à Dieu.", verset:"« Soyez sobres, et veillez. Votre adversaire, le diable, rôde comme un lion rugissant. »", ref:"1 Pierre 5,8", defi:"Choisissez un repas simple aujourd'hui. Vivez-le comme un acte spirituel conscient, en remerciant Dieu pour chaque bouchée." },
+  { nom:"L'Écoute", def:"Donner à l'autre l'espace d'être entendu vraiment, sans interrompre ni juger, avec un cœur ouvert.", verset:"« Que tout homme soit prompt à écouter, lent à parler, lent à se mettre en colère. »", ref:"Jacques 1,19", defi:"Aujourd'hui, lors d'une conversation, concentrez-vous à 100% sur l'autre. Ne pensez pas à votre réponse. Écoutez." },
+  { nom:"La Paix", def:"Cultiver la sérénité intérieure qui vient de Dieu et la rayonner autour de soi en toutes circonstances.", verset:"« Je vous laisse la paix, je vous donne ma paix. Je ne vous la donne pas comme le monde la donne. »", ref:"Jean 14,27", defi:"Identifiez une source d'agitation dans votre vie. Priez pour remettre cela entre les mains de Dieu et choisissez la paix." },
+  { nom:"La Joie", def:"Porter en soi une joie profonde qui ne dépend pas des circonstances, mais de la présence de Dieu.", verset:"« Réjouissez-vous toujours dans le Seigneur ! Je le dis encore : réjouissez-vous ! »", ref:"Philippiens 4,4", defi:"Cherchez et nommez 3 motifs de joie aujourd'hui, même dans les petites choses. Partagez cette joie avec quelqu'un." },
+  { nom:"La Pureté", def:"Garder son cœur, ses pensées et ses actes alignés avec la sainteté de Dieu.", verset:"« Bienheureux ceux qui ont le cœur pur, car ils verront Dieu. »", ref:"Matthieu 5,8", defi:"Examinez vos pensées d'aujourd'hui. Celles qui sont négatives ou impures, confiez-les à Dieu et demandez-Lui un cœur renouvelé." },
+  { nom:"Le Zèle", def:"S'engager avec ardeur et enthousiasme pour la gloire de Dieu et le bien du prochain.", verset:"« Ayez du zèle, et non de la paresse. Soyez fervents d'esprit. Servez le Seigneur. »", ref:"Romains 12,11", defi:"Faites une tâche ordinaire aujourd'hui avec une excellence extraordinaire, comme si vous la faisiez pour Dieu lui-même." },
+  { nom:"La Confiance", def:"S'abandonner à Dieu avec un cœur d'enfant, sachant qu'Il tient notre vie entre ses mains.", verset:"« Confie-toi en l'Éternel de tout ton cœur, et ne t'appuie pas sur ta sagesse. »", ref:"Proverbes 3,5", defi:"Lâchez prise sur quelque chose que vous contrôlez trop. Dites à Dieu : 'Je te fais confiance pour cela.' Et laissez faire." },
+  { nom:"La Rectitude", def:"Agir avec droiture, intégrité et transparence, que quelqu'un nous observe ou non.", verset:"« Que votre lumière luise ainsi devant les hommes, afin qu'ils voient vos bonnes œuvres. »", ref:"Matthieu 5,16", defi:"Agissez aujourd'hui de manière irréprochable dans un domaine où vous pourriez tricher ou prendre un raccourci." },
+  { nom:"La Bonté", def:"Répandre autour de soi une chaleur sincère et bienveillante, qui reflète la bonté même de Dieu.", verset:"« Le fruit de l'Esprit est amour, joie, paix, bonté, douceur… »", ref:"Galates 5,22", defi:"Faites quelque chose de bon pour quelqu'un qui ne peut rien vous donner en retour. Un inconnu, un voisin, un oublié." },
+  { nom:"Le Partage", def:"Ouvrir ses mains et son cœur pour que ce qu'on a reçu de Dieu circule vers ceux qui en ont besoin.", verset:"« Communiquez à ceux qui sont dans le besoin. Pratiquez l'hospitalité. »", ref:"Romains 12,13", defi:"Partagez quelque chose aujourd'hui : un repas, un savoir, du temps, un vêtement. Donnez ce que vous avez en abondance." },
+  { nom:"Le Silence", def:"Faire taire le bruit intérieur et extérieur pour entrer dans la présence de Dieu et L'entendre parler.", verset:"« Arrêtez, et sachez que je suis Dieu ! »", ref:"Psaume 46,11", defi:"Accordez-vous 15 minutes de silence complet aujourd'hui. Pas de musique, pas d'écran. Juste vous et Dieu." },
+  { nom:"L'Obéissance", def:"Répondre à la voix de Dieu avec un cœur disposé, même lorsque le chemin demande un sacrifice.", verset:"« L'obéissance vaut mieux que les sacrifices. »", ref:"1 Samuel 15,22", defi:"Y a-t-il quelque chose que Dieu vous demande depuis un moment ? Faites le premier pas aujourd'hui, même petit." },
+  { nom:"La Tendresse", def:"Manifester un amour délicat et attentionné envers ceux qui sont fragiles, blessés ou vulnérables.", verset:"« Il panse leurs blessures, en bandant leurs plaies. »", ref:"Psaume 147,3", defi:"Approchez quelqu'un de fragile avec une tendresse particulière aujourd'hui. Un geste, une parole, une présence suffit." },
+  { nom:"La Fidélité", def:"Rester stable dans ses engagements envers Dieu et les autres, dans la durée et dans l'épreuve.", verset:"« Celui qui est fidèle dans les petites choses l'est aussi dans les grandes. »", ref:"Luc 16,10", defi:"Tenez aujourd'hui un engagement que vous aviez pris, même si c'est difficile. La fidélité se construit dans les petits actes." },
+  { nom:"Le Recueillement", def:"Prendre le temps de rentrer en soi-même pour faire le point avec Dieu et s'aligner sur Sa volonté.", verset:"« Lorsque tu pries, entre dans ta chambre, ferme ta porte, et prie ton Père qui est là dans le lieu secret. »", ref:"Matthieu 6,6", defi:"Réservez un moment de recueillement aujourd'hui, loin des distractions. Relisez votre journée avec Dieu en fin de soirée." },
+  { nom:"La Sagesse", def:"Discerner la vérité de l'erreur, le bien du mal, et choisir le chemin de Dieu avec maturité.", verset:"« Si quelqu'un d'entre vous manque de sagesse, qu'il la demande à Dieu, qui donne à tous libéralement. »", ref:"Jacques 1,5", defi:"Avant une décision ou un jugement, posez-vous cette question : 'Que ferait Jésus à ma place ?' Agissez en conséquence." },
+  { nom:"L'Hospitalité", def:"Accueillir l'autre chez soi et dans son cœur avec chaleur, comme on accueillerait le Christ lui-même.", verset:"« N'oubliez pas l'hospitalité, car c'est en la pratiquant que quelques-uns ont hébergé des anges sans le savoir. »", ref:"Hébreux 13,2", defi:"Accueillez quelqu'un chez vous ou invitez quelqu'un à partager un moment avec vous. Ouvrez votre espace et votre cœur." },
+  { nom:"La Sincérité", def:"Parler et agir avec authenticité, sans masque, en harmonie parfaite entre ce qu'on pense, dit et fait.", verset:"« Mais que votre parole soit oui, oui, non, non ; ce qu'on dit de plus vient du malin. »", ref:"Matthieu 5,37", defi:"Soyez complètement sincère dans toutes vos interactions aujourd'hui. Aucun mensonge, aucune exagération, aucune façade." },
+  { nom:"La Contemplation", def:"S'arrêter pour admirer la beauté de Dieu dans Sa création et dans l'histoire de son peuple.", verset:"« Les cieux racontent la gloire de Dieu, et l'étendue des cieux proclame l'œuvre de ses mains. »", ref:"Psaume 19,2", defi:"Sortez et contemplez la création de Dieu pendant 10 minutes. Regardez le ciel, les arbres, la lumière. Adorez le Créateur." },
+  { nom:"Le Détachement", def:"Ne pas s'accrocher aux biens matériels ni aux honneurs, pour rester libre et disponible pour Dieu.", verset:"« Ne vous amassez pas des trésors sur la terre… mais amassez-vous des trésors dans le ciel. »", ref:"Matthieu 6,19-20", defi:"Donnez ou recyclez aujourd'hui quelque chose dont vous n'avez pas besoin mais que vous gardez par attachement." },
+  { nom:"L'Amour fraternel", def:"Aimer ses frères et sœurs en Christ d'un amour concret, actif et sacrificiel, sans distinction.", verset:"« Je vous donne un commandement nouveau : Aimez-vous les uns les autres ; comme je vous ai aimés. »", ref:"Jean 13,34", defi:"Faites la paix avec quelqu'un de votre communauté avec qui vous avez eu une tension. Faites le premier pas." }
+];
+
+// ── State ──
+let history = [];
+try { history = JSON.parse(localStorage.getItem('vertuHistory_v2') || '[]'); } catch(e) {}
+let currentVertu = null;
+let notifActive = false;
+let notifTimer = null;
+
+// ── Init ──
+function init() {
+  // Date
+  const now = new Date();
+  const opts = { weekday:'long', day:'numeric', month:'long', year:'numeric' };
+  document.getElementById('dateBadge').textContent = now.toLocaleDateString('fr-FR', opts).toUpperCase();
+
+  // Stars
+  const container = document.getElementById('stars');
+  for (let i = 0; i < 90; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    const size = Math.random() * 2.5 + 0.5;
+    s.style.cssText = `width:${size}px;height:${size}px;top:${Math.random()*100}%;left:${Math.random()*100}%;--d:${(Math.random()*4+2).toFixed(1)}s;--delay:-${(Math.random()*6).toFixed(1)}s;--op:${(Math.random()*0.45+0.15).toFixed(2)};`;
+    container.appendChild(s);
+  }
+
+  // Carême progress (Mercredi des Cendres 2025 = 5 mars 2025, Pâques = 20 avril)
+  updateCaremeProgress();
+
+  // Notification state
+  const savedNotif = localStorage.getItem('notifActive');
+  if (savedNotif === 'true') {
+    notifActive = true;
+    document.getElementById('notifBtn').classList.add('active');
+    scheduleLocalNotification();
+  }
+
+  // Service Worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(e => console.log('SW:', e));
+  }
+
+  renderHistory();
+}
+
+function updateCaremeProgress() {
+  const careme2025Start = new Date('2025-03-05'); // Mercredi des Cendres
+  const careme2025End   = new Date('2025-04-20'); // Pâques
+  const now = new Date();
+  const elapsed = Math.max(0, Math.floor((now - careme2025Start) / 86400000));
+  const jour    = Math.min(elapsed + 1, 40);
+  const restant = Math.max(0, Math.floor((careme2025End - now) / 86400000));
+  const pct     = Math.min(100, Math.round(elapsed / 46 * 100));
+
+  document.getElementById('jourNum').textContent = jour;
+  document.getElementById('progressFill').style.width = pct + '%';
+
+  // Messages d'encouragement par tranche de jours
+  const MESSAGES = [
+    // Jours 1–5 : Le départ
+    { max:1,  msg:"✨ Premier pas ! Le Carême commence — soyez lumière dès aujourd'hui." },
+    { max:2,  msg:"🌱 Tiens bon ! Chaque grand voyage commence par un petit pas." },
+    { max:3,  msg:"💪 3 jours déjà ! Vous êtes sur la bonne voie, continuez !" },
+    { max:4,  msg:"🙏 4 jours de grâce. Dieu voit vos efforts, même les plus petits." },
+    { max:5,  msg:"⭐ 5 jours ! Une semaine s'approche — vous y êtes presque !" },
+    // Jours 6–10 : La première semaine
+    { max:6,  msg:"🌅 Une semaine bien entamée. La régularité est déjà une victoire." },
+    { max:7,  msg:"🕊️ 7 jours — une semaine complète ! Seigneur, merci pour cette fidélité." },
+    { max:8,  msg:"🔥 8 jours de feu ! Votre flamme ne doit pas s'éteindre." },
+    { max:9,  msg:"💜 Presque 10 jours. Vous influencez autrement, continuez !" },
+    { max:10, msg:"🌟 10 jours ! Un quart du Carême accompli. Quelle belle avancée !" },
+    // Jours 11–15 : Le premier cap
+    { max:11, msg:"🏔️ Le chemin est long mais chaque jour compte. Ne lâchez pas !" },
+    { max:12, msg:"🌸 12 jours de grâce. Le Seigneur chemine avec vous." },
+    { max:13, msg:"💡 13 jours ! Votre lumière brille de plus en plus dans le monde." },
+    { max:14, msg:"⚡ Deux semaines presque ! Vous êtes un exemple pour votre entourage." },
+    { max:15, msg:"🏅 15 jours — mi-chemin approche ! Votre persévérance honore Dieu." },
+    // Jours 16–20 : Le milieu, là où ça devient difficile
+    { max:16, msg:"💪 Plus de la moitié s'approche ! Restez ancré dans la prière." },
+    { max:17, msg:"🌊 Le milieu du chemin peut être difficile. Dieu vous tient la main." },
+    { max:18, msg:"🕯️ 18 jours de fidélité. Chaque vertu vécue change le monde." },
+    { max:19, msg:"🎯 Presque 20 jours ! Votre engagement est une prédication silencieuse." },
+    { max:20, msg:"⚓ 20 jours ! La moitié est franchie. Restez ancrés dans le Christ !" },
+    // Jours 21–25 : La descente vers la Semaine Sainte
+    { max:21, msg:"🙌 21 jours ! Trois semaines de grâce. Vous êtes une inspiration." },
+    { max:22, msg:"🌿 Le Carême avance. La Semaine Sainte approche doucement." },
+    { max:23, msg:"🕊️ 23 jours de lumière portés dans le monde. C'est beau !" },
+    { max:24, msg:"💫 Presque 25 jours ! Vous avez semé des graines de vertu partout." },
+    { max:25, msg:"🌺 25 jours ! Les 3/5 sont derrière vous. Alléluia en approche !" },
+    // Jours 26–30 : La montée
+    { max:26, msg:"⬆️ On monte vers la Semaine Sainte. Votre cœur se prépare." },
+    { max:27, msg:"✝️ 27 jours. Jésus aussi a eu des moments difficiles. Il comprend." },
+    { max:28, msg:"💜 4 semaines révolues ! Votre fidélité est un témoignage puissant." },
+    { max:29, msg:"🌄 Presque 30 jours ! Le sommet est proche, ne regardez pas en arrière." },
+    { max:30, msg:"🏆 30 jours ! Vous avez tenu 30 vertus. C'est extraordinaire !" },
+    // Jours 31–35 : La Semaine Sainte approche
+    { max:31, msg:"✨ La ligne d'arrivée est en vue. Restez vigilants et fervents." },
+    { max:32, msg:"🔔 32 jours ! La Semaine Sainte frappe à la porte." },
+    { max:33, msg:"💡 33 jours — l'âge du Christ ! Marchez dans ses pas." },
+    { max:34, msg:"🌹 Dimanche des Rameaux approche. Préparez votre cœur à accueillir le Roi." },
+    { max:35, msg:"🙏 35 jours ! Cinq jours restants. Chaque heure est précieuse." },
+    // Jours 36–39 : La Semaine Sainte
+    { max:36, msg:"✝️ Semaine Sainte ! Méditez la Passion du Christ avec un cœur ouvert." },
+    { max:37, msg:"🕯️ Jeudi Saint approche — le jour du service et de l'amour total." },
+    { max:38, msg:"⬛ Vendredi Saint — Il a tout donné pour nous. Merci, Seigneur." },
+    { max:39, msg:"🌑 Samedi Saint — Le silence avant l'explosion de la joie pascale." },
+    // Jour 40 : La victoire !
+    { max:40, msg:"🎉 JOUR 40 — Vous avez accompli les 40 jours ! Alléluia, il est ressuscité ! ✝️🌅" },
+  ];
+
+  const msgObj = MESSAGES.find(m => jour <= m.max) || MESSAGES[MESSAGES.length - 1];
+
+  if (restant > 0) {
+    document.getElementById('jourRestant').textContent = `${restant} jour${restant > 1 ? 's' : ''} restant${restant > 1 ? 's' : ''}`;
+  } else {
+    document.getElementById('jourRestant').textContent = 'Il est ressuscité ! Alléluia ! 🌅';
+  }
+
+  document.getElementById('progressMessage').textContent = msgObj.msg;
+}
+
+// ── Draw ──
+function tirerVertu() {
+  document.getElementById('idleSection').style.display = 'none';
+  document.getElementById('spinner').classList.add('visible');
+  setTimeout(() => {
+    document.getElementById('spinner').classList.remove('visible');
+    // Pick avoiding last drawn
+    let v;
+    do { v = VERTUS[Math.floor(Math.random() * VERTUS.length)]; }
+    while (currentVertu && v.nom === currentVertu.nom);
+    currentVertu = v;
+    afficherVertu(v);
+    // Save
+    const today = now().toLocaleDateString('fr-FR', {day:'numeric',month:'short'});
+    history = history.filter(h => h.date !== today);
+    history.unshift({ date:today, nom:v.nom });
+    if (history.length > 10) history.pop();
+    try { localStorage.setItem('vertuHistory_v2', JSON.stringify(history)); } catch(e) {}
+    renderHistory();
+  }, 950);
+}
+
+function now() { return new Date(); }
+
+function afficherVertu(v) {
+  document.getElementById('vertuName').textContent = v.nom;
+  document.getElementById('vertuDef').textContent = v.def;
+  document.getElementById('versetText').textContent = v.verset;
+  document.getElementById('versetRef').textContent = v.ref;
+  document.getElementById('defiText').textContent = v.defi;
+  document.getElementById('resultSection').classList.add('visible');
+}
+
+function nouvelleVertu() {
+  document.getElementById('resultSection').classList.remove('visible');
+  document.getElementById('spinner').classList.add('visible');
+  setTimeout(() => {
+    document.getElementById('spinner').classList.remove('visible');
+    let v;
+    do { v = VERTUS[Math.floor(Math.random() * VERTUS.length)]; }
+    while (currentVertu && v.nom === currentVertu.nom);
+    currentVertu = v;
+    afficherVertu(v);
+  }, 750);
+}
+
+// ── History ──
+function renderHistory() {
+  if (!history.length) return;
+  document.getElementById('historySection').style.display = 'block';
+  document.getElementById('historyList').innerHTML = history.map(h => `
+    <div class="history-item">
+      <span class="history-date">${h.date}</span>
+      <span class="history-dot"></span>
+      <span class="history-name">${h.nom}</span>
+    </div>`).join('');
+}
+
+// ── Notifications ──
+function openNotifModal() {
+  document.getElementById('notifModal').classList.add('open');
+  document.getElementById('notifStatus').textContent = '';
+}
+function closeNotifModal() {
+  document.getElementById('notifModal').classList.remove('open');
+}
+
+async function activerNotifications() {
+  const statusEl = document.getElementById('notifStatus');
+
+  if (!('Notification' in window)) {
+    statusEl.textContent = '⚠️ Votre navigateur ne supporte pas les notifications.';
+    return;
+  }
+
+  const permission = await Notification.requestPermission();
+  if (permission !== 'granted') {
+    statusEl.textContent = '⚠️ Veuillez autoriser les notifications dans votre navigateur.';
+    return;
+  }
+
+  const hour   = parseInt(document.getElementById('notifHour').value);
+  const minute = parseInt(document.getElementById('notifMinute').value);
+
+  localStorage.setItem('notifActive', 'true');
+  localStorage.setItem('notifHour', hour);
+  localStorage.setItem('notifMinute', minute);
+
+  notifActive = true;
+  document.getElementById('notifBtn').classList.add('active');
+  scheduleLocalNotification();
+
+  statusEl.textContent = `✦ Rappel activé chaque jour à ${String(hour).padStart(2,'0')}h${String(minute).padStart(2,'0')} !`;
+  setTimeout(() => closeNotifModal(), 2200);
+}
+
+function scheduleLocalNotification() {
+  if (notifTimer) clearTimeout(notifTimer);
+  const hour   = parseInt(localStorage.getItem('notifHour')   || '8');
+  const minute = parseInt(localStorage.getItem('notifMinute') || '0');
+
+  const now2 = new Date();
+  const target = new Date();
+  target.setHours(hour, minute, 0, 0);
+  if (target <= now2) target.setDate(target.getDate() + 1); // tomorrow
+
+  const delay = target - now2;
+  notifTimer = setTimeout(() => {
+    fireNotification();
+    // reschedule daily
+    notifTimer = setInterval(fireNotification, 24 * 60 * 60 * 1000);
+  }, delay);
+}
+
+function fireNotification() {
+  if (Notification.permission !== 'granted') return;
+  const random = VERTUS[Math.floor(Math.random() * VERTUS.length)];
+  new Notification('✦ Ma Vertu du Jour ✦', {
+    body: `Aujourd'hui : ${random.nom}\n"${random.def.substring(0,80)}…"\n\nInfluencons Autrement 🕊️`,
+    icon: 'icons/icon-192.png',
+    badge: 'icons/icon-192.png',
+    tag: 'vertu-quotidienne'
+  });
+}
+
+// ── Share ──
+function getShareText() {
+  if (!currentVertu) return '';
+  return `✦ Ma Vertu du Jour ✦\n\n${currentVertu.nom}\n\n${currentVertu.verset}\n${currentVertu.ref}\n\n🌐 influencons.com — Influencons Autrement`;
+}
+function partager(reseau) {
+  const text = encodeURIComponent(getShareText());
+  const url  = encodeURIComponent('https://influencons.com');
+  if (reseau === 'facebook') window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}&quote=${text}`, '_blank');
+  else if (reseau === 'whatsapp') window.open(`https://wa.me/?text=${text}%20${url}`, '_blank');
+}
+function copier() {
+  navigator.clipboard.writeText(getShareText() + '\nhttps://influencons.com').then(() => {
+    showToast('✦ Copié dans le presse-papier !');
+    const btn = document.getElementById('btnCopier');
+    const orig = btn.innerHTML;
+    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:13px;height:13px"><polyline points="20 6 9 17 4 12"/></svg> Copié !`;
+    setTimeout(() => btn.innerHTML = orig, 2200);
+  });
+}
+
+// ── Toast ──
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+init();
+</script>
+</body>
+</html>
